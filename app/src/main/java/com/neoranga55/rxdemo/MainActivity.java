@@ -44,6 +44,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Observable.just("Short hello, world!").subscribe( s -> System.out.println(s));
+        Observable.just("Short hello, world!").map( s -> s + " By Sebas" ).subscribe( s -> System.out.println(s));
     }
 }
