@@ -37,13 +37,11 @@ public class MainActivity extends AppCompatActivity {
 
         myObservable.subscribe(mySubscriber);
 
-        Observable<String> myShortObservable = Observable.just("Short hello, world!");
-        Action1<String> onNextAction = new Action1<String>() {
+        Observable.just("Short hello, world!").subscribe(new Action1<String>() {
             @Override
             public void call(String s) {
                 System.out.println(s);
             }
-        };
-        myShortObservable.subscribe(onNextAction);
+        });
     }
 }
