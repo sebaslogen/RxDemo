@@ -62,6 +62,29 @@ public class MainActivity extends AppCompatActivity {
         query("Hello, world!")
                 .flatMap(Observable::from)
                 .subscribe(System.out::println);
+
+        // Advanced FlatMap versus Map
+        query("Hello, world!")
+                .flatMap(Observable::from)
+                    // Transform each String item into an Observable which emits two new Strings
+                    // String1 -> Observable(String2, String3) -> String2, String3
+                    .flatMap(this::getTitleStream)
+                .subscribe(System.out::println);
+
+        query("Hello, world!")
+                .flatMap(Observable::from)
+                    // Simply transform each String item into an Observable that emits a new String
+                    // String1 -> Observable(String2)
+                    .flatMap(this::getTitle)
+                .subscribe(System.out::println);
+
+        query("Hello, world!")
+                .flatMap(Observable::from)
+                    // Simply transform each String item into an Observable that emits a new String
+                    // String1 -> Observable(String2)
+                    .map(this::getTitle)
+                .subscribe(System.out::println);
+
     }
 
     private Observable<List<String>> query(String query) {
@@ -70,5 +93,27 @@ public class MainActivity extends AppCompatActivity {
             urls.add("Query: " + query + " " + i);
         }
         return Observable.just(urls);
+    }
+
+    // This method is compatible with map() and flatMap() because
+    // it returns an Observable (for flatMap) but it emits only one String (for map)
+    private Observable<String> getTitle(String URL) {
+        return Observable.just("http://" + URL.replaceAll(" ",""));
+    }
+
+    // This method is only compatible with flatMap() because
+    // the returned Observable emits more than one element
+    // Each Observable emits the received element twice (with extra text)
+    private Observable<String> getTitleStream(String URL) {
+        return Observable.create(
+                new Observable.OnSubscribe<String>() {
+                    @Override
+                    public void call(Subscriber<? super String> sub) {
+                        sub.onNext("http://" + URL.replaceAll(" ",""));
+                        sub.onNext("http://" + URL.replaceAll(" ","") + "-Bis");
+                        sub.onCompleted();
+                    }
+                }
+        );
     }
 }
