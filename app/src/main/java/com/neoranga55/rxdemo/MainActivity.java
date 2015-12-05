@@ -66,25 +66,29 @@ public class MainActivity extends AppCompatActivity {
         // Advanced FlatMap versus Map
         query("Hello, world!")
                 .flatMap(Observable::from)
-                    // Transform each String item into an Observable which emits two new Strings
-                    // String1 -> Observable(String2, String3) -> String2, String3
-                    .flatMap(this::getTitleStream)
+                // Simply transform each String item into an Observable that emits a new String
+                // String1 -> Observable(String2)
+                .map(this::getTitle)
                 .subscribe(System.out::println);
+        // Prints each Observable object reference once
 
         query("Hello, world!")
                 .flatMap(Observable::from)
-                    // Simply transform each String item into an Observable that emits a new String
-                    // String1 -> Observable(String2)
-                    .flatMap(this::getTitle)
+                // Simply transform each String item into an Observable that emits a new String
+                // String1 -> Observable(String2)
+                .flatMap(this::getTitle)
                 .subscribe(System.out::println);
+        // Prints each transformed String once
 
         query("Hello, world!")
                 .flatMap(Observable::from)
-                    // Simply transform each String item into an Observable that emits a new String
-                    // String1 -> Observable(String2)
-                    .map(this::getTitle)
+                // Transform each String item into an Observable which emits two new Strings
+                // String1 -> Observable(String2, String3) -> String2, String3
+                .flatMap(this::getTitleStream)
+                .filter(title -> title != null)
+                .take(11)
                 .subscribe(System.out::println);
-
+        // Prints two transformed Strings and skips null Strings
     }
 
     private Observable<List<String>> query(String query) {
@@ -111,6 +115,9 @@ public class MainActivity extends AppCompatActivity {
                     public void call(Subscriber<? super String> sub) {
                         sub.onNext("http://" + URL.replaceAll(" ",""));
                         sub.onNext("http://" + URL.replaceAll(" ","") + "-Bis");
+                        if (URL.contains("4")) {
+                            sub.onNext(null); // Simulate null item returned on a single query
+                        }
                         sub.onCompleted();
                     }
                 }
