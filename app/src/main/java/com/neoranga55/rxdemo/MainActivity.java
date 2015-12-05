@@ -14,6 +14,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Basic Rx 'Hello world'
         Observable<String> myObservable = Observable.create(
                 new Observable.OnSubscribe<String>() {
                     @Override
@@ -23,7 +24,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
-
         Subscriber<String> mySubscriber = new Subscriber<String>() {
             @Override
             public void onNext(String s) { System.out.println(s); }
@@ -34,9 +34,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(Throwable e) { }
         };
-
         myObservable.subscribe(mySubscriber);
 
+        // Shorter observable and subscriber
         Observable.just("Short hello, world!").subscribe(new Action1<String>() {
             @Override
             public void call(String s) {
@@ -44,6 +44,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Shorten subscriber with lambdas with retrolambda library and basic map transformation
         Observable.just("Short hello, world!").map( s -> s + " By Sebas" ).subscribe( s -> System.out.println(s));
+
+        // Map transformations of multiple types
+        Observable.just("Hello, world!")
+                .map(s -> s + " By Sebas")
+                .map(String::hashCode)
+                .map(i -> Integer.toString(i))
+                .subscribe(System.out::println);
     }
 }
