@@ -3,6 +3,9 @@ package com.neoranga55.rxdemo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Action1;
@@ -53,5 +56,19 @@ public class MainActivity extends AppCompatActivity {
                 .map(String::hashCode)
                 .map(i -> Integer.toString(i))
                 .subscribe(System.out::println);
+
+        // FlatMap transforms one type of stream
+        // (not just the observable objects but the actual stream) into another
+        query("Hello, world!")
+                .flatMap(Observable::from)
+                .subscribe(System.out::println);
+    }
+
+    private Observable<List<String>> query(String query) {
+        final ArrayList<String> urls = new ArrayList<>(10);
+        for (int i = 0; i < 10; i++) {
+            urls.add("Query: " + query + " " + i);
+        }
+        return Observable.just(urls);
     }
 }
