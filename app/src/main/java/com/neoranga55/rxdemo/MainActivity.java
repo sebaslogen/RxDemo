@@ -87,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
                 .flatMap(this::getTitleStream)
                 .filter(title -> title != null)
                 .take(11)
+                .doOnNext(this::storeItem)
                 .subscribe(System.out::println);
         // Prints two transformed Strings and skips null Strings
     }
@@ -122,5 +123,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
+    }
+
+    private void storeItem(String s) {
+        System.out.println("I'm storing item: " + s);
     }
 }
