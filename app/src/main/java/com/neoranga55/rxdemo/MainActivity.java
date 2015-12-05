@@ -114,12 +114,14 @@ public class MainActivity extends AppCompatActivity {
                 new Observable.OnSubscribe<String>() {
                     @Override
                     public void call(Subscriber<? super String> sub) {
-                        sub.onNext("http://" + URL.replaceAll(" ",""));
-                        sub.onNext("http://" + URL.replaceAll(" ","") + "-Bis");
-                        if (URL.contains("4")) {
-                            sub.onNext(null); // Simulate null item returned on a single query
+                        if (!sub.isUnsubscribed()) {
+                            sub.onNext("http://" + URL.replaceAll(" ",""));
+                            sub.onNext("http://" + URL.replaceAll(" ","") + "-Bis");
+                            if (URL.contains("4")) {
+                                sub.onNext(null); // Simulate null item returned on a single query
+                            }
+                            sub.onCompleted();
                         }
-                        sub.onCompleted();
                     }
                 }
         );
