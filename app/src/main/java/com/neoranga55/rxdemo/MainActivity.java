@@ -8,7 +8,9 @@ import java.util.List;
 
 import rx.Observable;
 import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,7 +18,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Observable.fromCallable(this::runRxDemos)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(System.out::println);
+    }
 
+    private boolean runRxDemos() {
         // Basic Rx 'Hello world'
         Observable<String> myObservable = Observable.create(
                 new Observable.OnSubscribe<String>() {
@@ -90,6 +98,8 @@ public class MainActivity extends AppCompatActivity {
                 .doOnNext(this::storeItem)
                 .subscribe(System.out::println);
         // Prints two transformed Strings and skips null Strings
+
+        return true;
     }
 
     private Observable<List<String>> query(String query) {
