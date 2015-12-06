@@ -18,13 +18,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // Run all Rx demos in separate thread and handle only the returned value (no errors)
         Observable.fromCallable(this::runRxDemos)
+                .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
+                .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
+                .subscribe(System.out::println);
+        // Defer execution of a method and forward errors
+        Observable.defer(() -> {
+                            try {
+                                return Observable.just(deferDemo());
+                            } catch (Exception e) {
+                                return Observable.error(e);
+                            }
+                        })
                 .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
                 .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
                 .subscribe(System.out::println);
     }
 
-    private boolean runRxDemos() {
+    private String deferDemo() {
+        return "deferDemo completed successfully";
+    }
+
+    private String runRxDemos() {
         // Basic Rx 'Hello world'
         Observable<String> myObservable = Observable.create(
                 new Observable.OnSubscribe<String>() {
@@ -99,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
         // Prints two transformed Strings and skips null Strings
 
-        return true;
+        return "runRxDemos completed successfully";
     }
 
     private Observable<List<String>> query(String query) {
