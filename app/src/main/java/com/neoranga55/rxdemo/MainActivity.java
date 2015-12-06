@@ -19,8 +19,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Observable.fromCallable(this::runRxDemos)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
+                .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
                 .subscribe(System.out::println);
     }
 
