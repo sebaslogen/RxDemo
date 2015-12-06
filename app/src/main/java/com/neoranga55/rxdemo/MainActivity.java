@@ -34,6 +34,22 @@ public class MainActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
                 .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
                 .subscribe(System.out::println);
+        Observable.defer(() -> {
+                            try {
+                                return Observable.just(deferExceptionDemo());
+                            } catch (Exception e) {
+                                return Observable.error(e);
+                            }
+                        })
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(System.out::println, throwable -> {
+                    System.out.println("Exception error correctly processed");
+                });
+    }
+
+    private String deferExceptionDemo() {
+        throw new ArrayIndexOutOfBoundsException();
     }
 
     private String deferDemo() {
