@@ -62,8 +62,10 @@ public class MainActivity extends AppCompatActivity {
                 new Observable.OnSubscribe<String>() {
                     @Override
                     public void call(Subscriber<? super String> sub) {
-                        sub.onNext("Hello, world!");
-                        sub.onCompleted();
+                        if (!sub.isUnsubscribed()) { // Fix to behave like Observable.just()
+                            sub.onNext("Hello, world!");
+                            sub.onCompleted();
+                        }
                     }
                 }
         );
