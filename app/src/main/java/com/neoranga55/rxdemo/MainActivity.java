@@ -8,6 +8,7 @@ import java.util.List;
 
 import rx.Observable;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -34,13 +35,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
                 .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
                 .subscribe(System.out::println);
-        Observable.defer(() -> {
-                            try {
-                                return Observable.just(deferExceptionDemo());
-                            } catch (Exception e) {
-                                return Observable.error(e);
-                            }
-                        })
+        Observable.defer(() -> Observable.just(deferExceptionDemo()))
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(System.out::println, throwable -> {
@@ -79,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(Throwable e) { }
         };
-        myObservable.subscribe(mySubscriber);
+        Subscription subscription = myObservable.subscribe(mySubscriber);
+        subscription.unsubscribe(); // This stops subscription if Observable was still emitting items
 
         // Shorter observable and subscriber
         Observable.just("Short hello, world!").subscribe(new Action1<String>() {
