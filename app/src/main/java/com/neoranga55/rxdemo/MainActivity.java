@@ -12,20 +12,29 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
 
 public class MainActivity extends AppCompatActivity {
+
+    /**
+     * Store all subscription to un-subscribe from all existing subscriptions
+     * when the Activity is destroyed and avoid memory leaks
+     */
+    private CompositeSubscription mSubscriptions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mSubscriptions = new CompositeSubscription();
         setContentView(R.layout.activity_main);
         // Run all Rx demos in separate thread and handle only the returned value (no errors)
-        Observable.fromCallable(this::runRxDemos)
+        final Subscription subs1 = Observable.fromCallable(this::runRxDemos)
                 .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
                 .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
                 .subscribe(System.out::println);
+        mSubscriptions.add(subs1);
         // Defer execution of a method and forward errors
-        Observable.defer(() -> {
+        final Subscription subs2 = Observable.defer(() -> {
                             try {
                                 return Observable.just(deferDemo());
                             } catch (Exception e) {
@@ -35,12 +44,14 @@ public class MainActivity extends AppCompatActivity {
                 .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
                 .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
                 .subscribe(System.out::println);
-        Observable.defer(() -> Observable.just(deferExceptionDemo()))
+        mSubscriptions.add(subs2);
+        final Subscription subs3 = Observable.defer(() -> Observable.just(deferExceptionDemo()))
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(System.out::println, throwable -> {
                     System.out.println("Exception error correctly processed");
                 });
+        mSubscriptions.add(subs3);
     }
 
     private String deferExceptionDemo() {
@@ -101,6 +112,14 @@ public class MainActivity extends AppCompatActivity {
                 .flatMap(Observable::from)
                 .subscribe(System.out::println);
 
+        // Basic difference between map and flatMap
+        Observable.just(1,2,3)
+                .map(i -> "Num:" + Integer.toString(i))
+                .subscribe(System.out::println);
+        Observable.just(1,2,3,4,5)
+                .flatMap(i -> numToString(i))
+                .subscribe(System.out::println);
+
         // Advanced FlatMap versus Map
         query("Hello, world!")
                 .flatMap(Observable::from)
@@ -130,6 +149,10 @@ public class MainActivity extends AppCompatActivity {
         // Prints two transformed Strings and skips null Strings
 
         return "runRxDemos completed successfully";
+    }
+
+    private Observable<String> numToString(Integer i) {
+        return Observable.just("Numero: " + Integer.toString(i));
     }
 
     private Observable<List<String>> query(String query) {
@@ -169,5 +192,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void storeItem(String s) {
         System.out.println("I'm storing item: " + s);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mSubscriptions.unsubscribe();
     }
 }
