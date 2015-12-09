@@ -15,6 +15,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
+@SuppressWarnings("SameReturnValue")
 public class MainActivity extends AppCompatActivity {
 
     /**
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 .map(i -> "Num:" + Integer.toString(i))
                 .subscribe(System.out::println);
         Observable.just(1,2,3,4,5)
-                .flatMap(i -> numToString(i))
+                .flatMap(this::numToString)
                 .subscribe(System.out::println);
 
         // Advanced FlatMap versus Map
@@ -179,7 +180,8 @@ public class MainActivity extends AppCompatActivity {
         return Observable.just("Numero: " + Integer.toString(i));
     }
 
-    private Observable<List<String>> query(String query) {
+    @SuppressWarnings("SameParameterValue")
+    private Observable<List<String>> query( String query) {
         final ArrayList<String> urls = new ArrayList<>(10);
         for (int i = 0; i < 10; i++) {
             urls.add("Query: " + query + " " + i);
