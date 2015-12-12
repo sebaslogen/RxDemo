@@ -173,11 +173,54 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
         // Prints two transformed Strings and skips null Strings
 
+        rxCache();
+
         return "runRxDemos completed successfully";
     }
 
+    /**
+     * Cache values and emit always the same from the cache,
+     * non cached instances keep receiving new items
+     */
+    private void rxCache() {
+        // Create a new observable that emits one integer on each subscribe.
+        // The number indicates how many times the subscribe() has been called.
+        Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
+            private int counter = 0;
+
+            @Override
+            public void call(Subscriber<? super Integer> subscriber) {
+                subscriber.onNext(counter++); // Give the next counter value synchronously.
+                // Normally it would be nice to complete the observable, but for
+                // illustrative purposes we'll leave the subscriptions as non-terminating.
+                // observer.onCompleted();
+            }
+        });
+
+        // Subscriptions to the original observable increment the value
+        observable.subscribe(integer -> { // Increased value
+            System.out.println("Emitted counter in non-cached Observer 1: " + integer);
+        });
+        // Create a cached observable that saves all values it receives from
+        // the original source and gives the forward to all of its subscribers.
+        Observable<Integer> cachedObservable = observable.cache();
+        cachedObservable.subscribe(integer -> { // Cached value
+            System.out.println("Emitted counter in cached Observer 2: " + integer);
+        });
+        cachedObservable.subscribe(integer -> { // Cached value
+            System.out.println("Emitted counter in cached Observer 3: " + integer);
+        });
+        // The original observable is still of course there:
+        observable.subscribe(integer -> { // Increased value
+            System.out.println("Emitted counter in non-cached Observer 4: " + integer);
+        });
+        cachedObservable.subscribe(integer -> { // Cached value (cache is not modified)
+            System.out.println("Emitted counter in cached Observer 5: " + integer);
+        });
+    }
+
     private Observable<String> numToString(Integer i) {
-        return Observable.just("Numero: " + Integer.toString(i));
+        return Observable.just("Number: " + Integer.toString(i));
     }
 
     @SuppressWarnings("SameParameterValue")
