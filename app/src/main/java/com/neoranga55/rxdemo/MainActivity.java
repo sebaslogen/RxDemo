@@ -40,12 +40,12 @@ public class MainActivity extends AppCompatActivity {
 
         // Defer execution of a method and handle possible errors
         final Subscription subs2 = Observable.defer(() -> {
-            try {
-                return Observable.just(deferDemo());
-            } catch (Exception e) { // No error is actually forwarded here
-                return Observable.error(e);
-            }
-        })
+                    try {
+                        return Observable.just(deferDemo());
+                    } catch (Exception e) { // No error is actually forwarded here
+                        return Observable.error(e);
+                    }
+                })
                 .map(input -> {
                     try {
                         return input;
