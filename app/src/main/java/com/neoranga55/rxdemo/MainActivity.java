@@ -31,7 +31,8 @@ public class MainActivity extends AppCompatActivity {
 
         mSubscriptions = new CompositeSubscription();
 
-        // Run all Rx demos in separate thread and handle only the returned value (no errors)
+        // Run all Rx demos in separate thread and handle only the returned value
+        // (no errors processed but fromCallable automatically handles exception throwing)
         final Subscription subs1 = Observable.fromCallable(this::runRxDemos)
                 .subscribeOn(Schedulers.newThread()) // Everything above this runs on a new thread
                 .observeOn(AndroidSchedulers.mainThread()) // Everything below runs on main thread
@@ -124,6 +125,10 @@ public class MainActivity extends AppCompatActivity {
         // Shorten subscriber with lambdas with retrolambda library and basic map transformation
         Observable.just("Short hello, world!").map( s -> s + " By Sebas" ).subscribe( s -> System.out.println(s));
 
+        // Concatenate two observables (both of them will be emitted in sequential order
+        // This is equivalent to Observable.concat(observable_1, observable_2)
+        Observable.just("First sequential hello, world!").concatWith(  Observable.just("Concatenated hello, world!") ).subscribe( s -> System.out.println(s));
+
         // Map transformations of multiple types
         Observable.just("Hello, world!")
                 .map(s -> s + " By Sebas")
@@ -131,10 +136,22 @@ public class MainActivity extends AppCompatActivity {
                 .map(i -> Integer.toString(i))
                 .subscribe(System.out::println);
 
-        // FlatMap transforms one type of stream
-        // (not just the observable objects but the actual stream) into another
-        query("Hello, world!")
+        // FlatMap transforms each item received (of input type A)
+        // into another stream of objects (of output type B)
+        // and then flattens (mixes) all new streams into a single stream (of output type B)
+        // (there is a new stream/observable produced for each input item received in flatMap)
+        //    Warning:    flatMap doesn't respect order (it uses merging),
+        // so if flatMap calls an asynchronous method that returns async results
+        // the resulting sequence might not respect the sequence of items emitted from
+        // original observable before flatMap. To enforce sequence use concatMap instead of flatMap
+        query("Hello, world! flatMap")
                 .flatMap(Observable::from)
+                .subscribe(System.out::println);
+
+        // ConcatMap
+        // This will produce the same output as above but ensure sequential order is respected
+        query("Hello, world! concatMap")
+                .concatMap(Observable::from)
                 .subscribe(System.out::println);
 
         // Basic difference between map and flatMap
@@ -146,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
 
         // Advanced FlatMap versus Map
-        query("Hello, world!")
+        query("Hello, world! flatMap VS map")
                 .flatMap(Observable::from)
                 // Simply transform each String item into an Observable that emits a new String
                 // String1 -> Observable(String2)
@@ -154,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
         // Prints each Observable object reference once
 
-        query("Hello, world!")
+        query("Hello, world! flatMap + flatMap")
                 .flatMap(Observable::from)
                 // Simply transform each String item into an Observable that emits a new String
                 // String1 -> Observable(String2)
@@ -162,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
         // Prints each transformed String once
 
-        query("Hello, world!")
+        query("Hello, world! flatMap + flatMap + filter + take + store")
                 .flatMap(Observable::from)
                 // Transform each String item into an Observable which emits two new Strings
                 // String1 -> Observable(String2, String3) -> String2, String3
