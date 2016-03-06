@@ -7,6 +7,7 @@ import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView resultField = (TextView) findViewById(R.id.textView);
         final PublishSubject searchSubject = PublishSubject.create();
         searchSubject
-                .debounce(1000, TimeUnit.MILLISECONDS)
+                .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
                 .observeOn(Schedulers.io()) // Network call should be on another thread, not on UI thread
                 .map(s -> {
                     try { // Simulate network call
@@ -237,6 +238,35 @@ public class MainActivity extends AppCompatActivity {
         // Prints two transformed Strings and skips null Strings
 
         rxCache();
+
+
+        // Retry demo: it will throw an error every second and
+        // it will retry based on the boolean returned (always true here)
+        // but after 10 seconds it un-subscribes so the retry stops and calls subscription error
+        Observable<String> streamWithRetry = Observable.interval(1, TimeUnit.SECONDS)
+                .map((tick) -> {
+                            if (tick >= 0) {
+                                Exceptions.propagate(new IOException("Custom error"));
+                            }
+                            return tick.toString();
+                        }
+                )
+                .retry((integer, throwable) -> {
+                    return true;
+                })
+                .subscribeOn(Schedulers.computation())
+                .observeOn(AndroidSchedulers.mainThread());
+        Subscription retrySubscription = streamWithRetry.subscribe(s -> {
+            System.out.println("Subscriber receiving emitted item: " + s);
+        }, throwable -> {
+            System.out.println("Subscriber receiving error: " + throwable);
+        });
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        retrySubscription.unsubscribe();
 
         return "runRxDemos completed successfully";
     }
