@@ -47,21 +47,29 @@ public class MainActivity extends AppCompatActivity {
 
         mSubscriptions.add(RxExperiments.deferExceptionDemoWithErrorHandling());
 
-        // More advanced RxJava (including Subjects)
+        rxSubjectPipes();
+
+    }
+
+    /**
+     * More advanced RxJava (including Subjects and alternatives)
+     */
+    private void rxSubjectPipes() {
+        // 1- Wire the typing input from user (unlimited) into another view
         final EditText inputField = (EditText) findViewById(R.id.editText);
         final TextView resultField = (TextView) findViewById(R.id.textView);
+
+        // 1.1- Using a PublishSubject
+        // This is dangerous because the Rx contract has to be enforced manually:
+        // - Manual thread safety
+        // - Order of items emitted
+        // - onComplete() and onError() events
         final PublishSubject searchSubject = PublishSubject.create();
         searchSubject
                 .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
-                .observeOn(Schedulers.io()) // Network call should be on another thread, not on UI thread
-                .map(s -> {
-                    try { // Simulate network call
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    return s;
-                })
+                .observeOn(Schedulers.io())
+                // Network call should be on IO thread (fake delay() already operates in Computation thread)
+                .delay(1, TimeUnit.SECONDS) // Simulate network call
                 .observeOn(AndroidSchedulers.mainThread()) // Response needs to be on UI thread
                 .subscribe(new Action1<String>() {
                     @Override
@@ -72,9 +80,7 @@ public class MainActivity extends AppCompatActivity {
 
         inputField.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -82,9 +88,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-
-            }
+            public void afterTextChanged(Editable s) {}
         });
     }
 
