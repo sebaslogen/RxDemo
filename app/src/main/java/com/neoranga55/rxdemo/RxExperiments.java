@@ -143,12 +143,24 @@ public class RxExperiments {
 
         // 10- Caching methods to store items between subscription/un-subscription events
         // useful for surviving Android orientation changes or items among multiple
-        rxCache(); // .cache() == .replay().autoConnect() (with finer control)
+        rxCache();
 
 
-        // Retry demo: it will throw an error every second and
-        // it will retry based on the boolean returned (always true here)
-        // but after 10 seconds it un-subscribes so the retry stops and calls subscription error
+        // 11- Retry to subscribe again (from the beginning in cold observables)
+        // only when there is an error emitted and based on a policy
+        rxRetry();
+
+
+        return "runRxDemos completed successfully";
+    }
+
+    /**
+     * Retry demo: it will throw an error every second and
+     * it will retry based on the boolean returned (always true here)
+     * After 10 seconds it un-subscribes, then the retry stops handling errors/exceptions
+     * and it calls subscription onError
+     */
+    private static void rxRetry() {
         Observable<String> streamWithRetry = Observable.interval(1, TimeUnit.SECONDS)
                 .map((tick) -> {
                             if (tick >= 0) {
@@ -158,7 +170,7 @@ public class RxExperiments {
                         }
                 )
                 .retry((integer, throwable) -> {
-                    return true;
+                    return true; // Policy to keep retrying (always retry in this example)
                 })
                 .subscribeOn(Schedulers.computation())
                 .observeOn(AndroidSchedulers.mainThread());
@@ -173,24 +185,25 @@ public class RxExperiments {
             e.printStackTrace();
         }
         retrySubscription.unsubscribe();
-
-        return "runRxDemos completed successfully";
     }
 
     /**
      * Cache values and emit always the same from the cache,
      * non cached instances keep receiving new items
+     *
+     * Note: cache() == replay().autoConnect() (the later has finer control of cache's size)
+     * Replay also supports timing expiration of cache
      */
     private static void rxCache() {
-        // Create a new observable that emits one integer on each subscribe.
-        // The number indicates how many times the subscribe() has been called.
+        // Create a new observable that emits one integer on each subscribe() call.
+        // The counter number indicates how many times the subscribe() has been called.
         Observable<Integer> observable = Observable.create(new Observable.OnSubscribe<Integer>() {
             private int counter = 0;
 
             @Override
             public void call(Subscriber<? super Integer> subscriber) {
-                subscriber.onNext(counter++); // Give the next counter value synchronously.
-                // Normally it would be nice to complete the observable, but for
+                subscriber.onNext(++counter);
+                // Normally it would be better to complete the observable, but for
                 // illustrative purposes we'll leave the subscriptions as non-terminating.
                 // observer.onCompleted();
             }
@@ -200,8 +213,12 @@ public class RxExperiments {
         observable.subscribe(integer -> { // Increased value
             System.out.println("Emitted counter in non-cached Observer 1: " + integer);
         });
+
+
+        // Cache example
+
         // Create a cached observable that saves all values it receives from
-        // the original source and gives the forward to all of its subscribers.
+        // the original source and replays it to all of the subscribers
         Observable<Integer> cachedObservable = observable.cache();
         cachedObservable.subscribe(integer -> { // Cached value
             System.out.println("Emitted counter in cached Observer 2: " + integer);
@@ -215,6 +232,26 @@ public class RxExperiments {
         });
         cachedObservable.subscribe(integer -> { // Cached value (cache is not modified)
             System.out.println("Emitted counter in cached Observer 5: " + integer);
+        });
+
+
+        // Replay + Auto Connect example
+
+        // Create a cached observable that saves one value from
+        // the original source and replays it to all of the subscribers
+        Observable<Integer> replayCacheObservable = observable.replay(1).autoConnect();
+        replayCacheObservable.subscribe(integer -> { // Cached value
+            System.out.println("Emitted counter in cached (replay().autoConnect()) Observer 6: " + integer);
+        });
+        replayCacheObservable.subscribe(integer -> { // Cached value
+            System.out.println("Emitted counter in cached (replay().autoConnect()) Observer 7: " + integer);
+        });
+        // The original observable is still of course there:
+        observable.subscribe(integer -> { // Increased value
+            System.out.println("Emitted counter in non-cached Observer 8: " + integer);
+        });
+        replayCacheObservable.subscribe(integer -> { // Cached value (cache is not modified)
+            System.out.println("Emitted counter in cached (replay().autoConnect()) Observer 9: " + integer);
         });
     }
 }
