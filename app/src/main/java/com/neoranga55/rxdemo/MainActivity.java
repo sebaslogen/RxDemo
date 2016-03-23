@@ -50,14 +50,14 @@ public class MainActivity extends AppCompatActivity {
 
         mSubscriptions.add(RxExperiments.deferExceptionDemoWithErrorHandling());
 
-        rxSubjectPipes();
+        rxSubjectPipes(mSubscriptions);
 
     }
 
     /**
      * More advanced RxJava (including Subjects and alternatives)
      */
-    private void rxSubjectPipes() {
+    private void rxSubjectPipes(final CompositeSubscription subscriptions) {
         // 1- Wire the typing input from user (unlimited) into another view
         final EditText inputField = (EditText) findViewById(R.id.editText);
         final TextView resultFieldForPublishSubject = (TextView) findViewById(R.id.textView1);
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         // - Order of items emitted
         // - onComplete() and onError() events
         final PublishSubject searchSubject = PublishSubject.create();
-        searchSubject
+        Subscription subs1 = searchSubject
                 .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
                 .observeOn(Schedulers.io())
                 // Network call should be on IO thread (fake delay() already operates in Computation thread)
@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
                         resultFieldForPublishSubject.setText(res.toLowerCase());
                     }
                 });
+        subscriptions.add(subs1); // We always have to unsubscribe
 
         inputField.addTextChangedListener(new TextWatcher() {
             @Override
@@ -102,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         // This is safer because is it stateless and it can't accept terminal events complete/error
         final PublishRelay searchPublishRelay = PublishRelay.create();
         // Note: add .toSerialized() to any type of Relay object to ensure emitting(.call()) is thread safe
-        searchPublishRelay
+        Subscription subs2 = searchPublishRelay
                 .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
                 .observeOn(Schedulers.io())
                 // Network call should be on IO thread (fake delay() already operates in Computation thread)
@@ -114,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                         resultFieldForRxRelay.setText(res.toUpperCase());
                     }
                 });
+        subscriptions.add(subs2); // We always have to unsubscribe
 
         inputField.addTextChangedListener(new TextWatcher() {
             @Override
@@ -131,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 1.3- Solve the same problem using a RxBindings library especially designed for Android UI
         Observable<CharSequence> searchRxBinding = RxTextView.textChanges(inputField);
-        searchRxBinding
+        Subscription subs3 = searchRxBinding
                 .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
                 .map(CharSequence::toString) // RxBinding returns the original CharSequence
                 .observeOn(Schedulers.io())
@@ -139,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 .delay(1, TimeUnit.SECONDS) // Simulate network call
                 .observeOn(AndroidSchedulers.mainThread()) // Response needs to be on UI thread
                 .subscribe(resultFieldForRxBindings::setText);
+        subscriptions.add(subs3); // We always have to unsubscribe
     }
 
     @Override
