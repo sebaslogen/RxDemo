@@ -111,35 +111,39 @@ public class RxExperiments {
                 .subscribe(System.out::println); // Number:1 Number:2 Number:3
 
 
-        // Advanced FlatMap versus Map
+        // 9- Advanced FlatMap versus Map
         FillerMethods.query("Hello, world! flatMap VS map")
-                .flatMap(Observable::from)
-                // Simply transform each String item into an Observable that emits a new String
-                // String1 -> Observable(String2)
+                .flatMap(Observable::from) // String -> Observable<String> 1, 2... -> String 1, 2...
                 .map(FillerMethods::getTitle)
+                // Map simply transforms each String item into an Observable of String
+                // String1 -> Observable(String2) (emitting Observable, not the String inside)
                 .subscribe(System.out::println);
-        // Prints each Observable object reference once
+        // Prints each Observable object reference: rx.internal.util.ScalarSynchronousObservable@7e78942
 
         FillerMethods.query("Hello, world! flatMap + flatMap")
                 .flatMap(Observable::from)
-                // Simply transform each String item into an Observable that emits a new String
-                // String1 -> Observable(String2)
                 .flatMap(FillerMethods::getTitle)
+                // FlatMap simply transforms each String item into an Observable that emits a new String
+                // String1 -> Observable(String2) -> String2
                 .subscribe(System.out::println);
-        // Prints each transformed String once
+        // Prints each transformed String: http://Query:Hello,world!flatMap+flatMap0
 
         FillerMethods.query("Hello, world! flatMap + flatMap + filter + take + store")
                 .flatMap(Observable::from)
-                // Transform each String item into an Observable which emits two new Strings
-                // String1 -> Observable(String2, String3) -> String2, String3
                 .flatMap(FillerMethods::getTitleStream)
+                // FlatMap Transforms each String item into an Observable which emits 2 new Strings
+                // String1 -> Observable(String2, String3) -> String2, String3
                 .filter(title -> title != null)
                 .take(11)
                 .doOnNext(FillerMethods::storeItem)
+                // Execute method on each item emitted before passing it to the subscriber
                 .subscribe(System.out::println);
         // Prints two transformed Strings and skips null Strings
 
-        rxCache();
+
+        // 10- Caching methods to store items between subscription/un-subscription events
+        // useful for surviving Android orientation changes or items among multiple
+        rxCache(); // .cache() == .replay().autoConnect() (with finer control)
 
 
         // Retry demo: it will throw an error every second and
