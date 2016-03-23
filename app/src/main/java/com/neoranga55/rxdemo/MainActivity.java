@@ -7,6 +7,7 @@ import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.jakewharton.rxbinding.widget.RxTextView;
 import com.jakewharton.rxrelay.PublishRelay;
 
 import java.util.concurrent.TimeUnit;
@@ -43,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
         mSubscriptions.add(subs1);
 
-//        mSubscriptions.add(RxExperiments.deferDemo());
+        mSubscriptions.add(RxExperiments.deferDemo());
 
         mSubscriptions.add(RxExperiments.deferExceptionDemo());
 
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView resultFieldForRxRelay = (TextView) findViewById(R.id.textView2);
         final TextView resultFieldForRxBindings = (TextView) findViewById(R.id.textView3);
 
+
         // 1.1- Using a PublishSubject
         // This is dangerous because the Rx contract has to be enforced manually:
         // - Manual thread safety
@@ -78,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Action1<String>() {
                     @Override
                     public void call(String res) {
-                        resultFieldForPublishSubject.setText(res);
+                        resultFieldForPublishSubject.setText(res.toLowerCase());
                     }
                 });
 
@@ -88,16 +90,18 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                searchSubject.onNext(s.toString().toLowerCase());
+                searchSubject.onNext(s.toString());
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
 
+
         // 1.2- Solve the same problem using a RxRelay library
         // This is safer because is it stateless and it can't accept terminal events complete/error
         final PublishRelay searchPublishRelay = PublishRelay.create();
+        // Note: add .toSerialized() to any type of Relay object to ensure emitting(.call()) is thread safe
         searchPublishRelay
                 .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
                 .observeOn(Schedulers.io())
@@ -123,6 +127,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+
+        // 1.3- Solve the same problem using a RxBindings library especially designed for Android UI
+        Observable<CharSequence> searchRxBinding = RxTextView.textChanges(inputField);
+        searchRxBinding
+                .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
+                .map(CharSequence::toString) // RxBinding returns the original CharSequence
+                .observeOn(Schedulers.io())
+                // Network call should be on IO thread (fake delay() already operates in Computation thread)
+                .delay(1, TimeUnit.SECONDS) // Simulate network call
+                .observeOn(AndroidSchedulers.mainThread()) // Response needs to be on UI thread
+                .subscribe(resultFieldForRxBindings::setText);
     }
 
     @Override
