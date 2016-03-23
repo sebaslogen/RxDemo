@@ -131,8 +131,10 @@ public class MainActivity extends AppCompatActivity {
                 .map(CharSequence::toString) // RxBinding returns the original CharSequence
                 // Warning the CharSequence is mutable so toString creates an immutable copy
                 // that can be used safely and asynchronously
+                .filter(charSequence -> charSequence.length() > 0)
+                // Note: RxBinging emits an empty item on subscription
+                // so we can overwrite with default text after filtering the empty text
                 .startWith("Processed text RxBindings2")
-                // Note: RxBinging emits an empty item on subscription that we overwrite with default text
                 .compose(applyWaitAndDelayTransformation())
                 .subscribe(resultFieldForRxBindings::setText);
         subscriptions.add(subs3); // We always have to unsubscribe
