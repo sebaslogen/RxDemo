@@ -247,7 +247,22 @@ public class RxExperiments {
     }
 
     /**
-     * Defer execution of a method and handle possible errors
+     * Defer execution of a method and forward errors to subscriber
+     * @return subscription of deferred execution
+     */
+    public static Subscription deferExceptionDemo() {
+        return Observable.defer(() -> Observable.just(RxExperiments.throwException()))
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        System.out::println,
+                        throwable -> {
+                            System.out.println("Exception error correctly processed");
+                        });
+    }
+
+    /**
+     * Defer execution of a method and example of how to handle possible errors
      * @return subscription of deferred execution
      */
     public static Subscription deferDemo() {
@@ -268,21 +283,6 @@ public class RxExperiments {
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(System.out::println);
-    }
-
-    /**
-     * Defer execution of a method and forward errors to subscriber
-     * @return subscription of deferred execution
-     */
-    public static Subscription deferExceptionDemo() {
-        return Observable.defer(() -> Observable.just(RxExperiments.throwException()))
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        System.out::println,
-                        throwable -> {
-                            System.out.println("Exception error correctly processed");
-                        });
     }
 
     public static String throwException() {
