@@ -87,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Warning the CharSequence is mutable so toString creates an immutable copy
                 searchSubject.onNext(s.toString());
             }
 
@@ -115,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Warning the CharSequence is mutable so toString creates an immutable copy
                 searchPublishRelay.call(s.toString());
             }
 
@@ -126,9 +128,11 @@ public class MainActivity extends AppCompatActivity {
         // 1.3- Solve the same problem using a RxBindings library especially designed for Android UI
         Observable<CharSequence> searchRxBinding = RxTextView.textChanges(inputField);
         Subscription subs3 = searchRxBinding
-                .filter(charSequence -> charSequence.length() > 0)
-                .startWith("Processed text RxBindings2")
                 .map(CharSequence::toString) // RxBinding returns the original CharSequence
+                // Warning the CharSequence is mutable so toString creates an immutable copy
+                // that can be used safely and asynchronously
+                .startWith("Processed text RxBindings2")
+                // Note: RxBinging emits an empty item on subscription that we overwrite with default text
                 .compose(applyWaitAndDelayTransformation())
                 .subscribe(resultFieldForRxBindings::setText);
         subscriptions.add(subs3); // We always have to unsubscribe
