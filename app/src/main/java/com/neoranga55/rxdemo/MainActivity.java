@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.exceptions.Exceptions;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
@@ -42,45 +41,11 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(System.out::println);
         mSubscriptions.add(subs1);
 
-        // Defer execution of a method and handle possible errors
-        final Subscription subs2 = Observable.defer(() -> {
-                    try {
-                        return Observable.just(RxExperiments.deferDemo());
-                    } catch (Exception e) { // No error is actually forwarded here
-                        return Observable.error(e);
-                    }
-                })
-                .map(input -> {
-                    try {
-                        return input;
-                    } catch (Throwable t) { // How to handle/propagate exceptions in map methods
-                        throw Exceptions.propagate(t);
-                    }
-                })
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(System.out::println);
-        mSubscriptions.add(subs2);
+        mSubscriptions.add(RxExperiments.deferDemo());
 
-        // Defer execution of a method and forward errors to subscriber
-        final Subscription subs3 = Observable.defer(() -> Observable.just(RxExperiments.deferExceptionDemo()))
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        System.out::println,
-                        throwable -> {
-                            System.out.println("Exception error correctly processed");
-                        });
-        mSubscriptions.add(subs3);
+        mSubscriptions.add(RxExperiments.deferExceptionDemo());
 
-        // Defer execution of a method and handle error inside Observable
-        final Subscription subs4 = Observable.defer(() -> Observable.just(RxExperiments.deferExceptionDemo()))
-                .onErrorReturn( // The events above in the stream will still stop emitting items because they saw the onError event
-                        error -> "Exception processed by Observable and this value is returned instead")
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(System.out::println);
-        mSubscriptions.add(subs4);
+        mSubscriptions.add(RxExperiments.deferExceptionDemoWithErrorHandling());
 
         // More advanced RxJava (including Subjects)
         final EditText inputField = (EditText) findViewById(R.id.editText);
@@ -126,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mSubscriptions.clear(); // Note: If .unsubscribe() the CompositeSubscription becomes useless
+        mSubscriptions.clear();
+        // Note: If using .unsubscribe() the CompositeSubscription becomes useless
+        // so it's better to use clear() so the CompositeSubscription is still usable
     }
 }

@@ -16,15 +16,6 @@ import rx.schedulers.Schedulers;
  */
 public class RxExperiments {
 
-
-    public static String deferExceptionDemo() {
-        throw new ArrayIndexOutOfBoundsException();
-    }
-
-    public static String deferDemo() {
-        return "deferDemo completed successfully";
-    }
-
     public static String runRxDemos() {
         // 1- Basic Rx 'Hello world'
         Observable<String> myObservable = Observable.create(
@@ -253,5 +244,61 @@ public class RxExperiments {
         replayCacheObservable.subscribe(integer -> { // Cached value (cache is not modified)
             System.out.println("Emitted counter in cached (replay().autoConnect()) Observer 9: " + integer);
         });
+    }
+
+    /**
+     * Defer execution of a method and handle possible errors
+     * @return subscription of deferred execution
+     */
+    public static Subscription deferDemo() {
+        return Observable.defer(() -> {
+            try {
+                return Observable.just("deferDemo completed successfully");
+            } catch (Exception e) { // No error is actually forwarded here
+                return Observable.error(e);
+            }
+        })
+                .map(input -> {
+                    try {
+                        return input;
+                    } catch (Throwable t) { // How to handle/propagate exceptions in map methods
+                        throw Exceptions.propagate(t);
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(System.out::println);
+    }
+
+    /**
+     * Defer execution of a method and forward errors to subscriber
+     * @return subscription of deferred execution
+     */
+    public static Subscription deferExceptionDemo() {
+        return Observable.defer(() -> Observable.just(RxExperiments.throwException()))
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        System.out::println,
+                        throwable -> {
+                            System.out.println("Exception error correctly processed");
+                        });
+    }
+
+    public static String throwException() {
+        throw new ArrayIndexOutOfBoundsException();
+    }
+
+    /**
+     * Defer execution of a method and handle error inside Observable
+     * @return subscription of deferred execution
+     */
+    public static Subscription deferExceptionDemoWithErrorHandling() {
+        return Observable.defer(() -> Observable.just(RxExperiments.throwException()))
+                .onErrorReturn( // The events above in the stream will still stop emitting items because they saw the onError event
+                        error -> "Exception processed by Observable and this value is returned instead")
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(System.out::println);
     }
 }
