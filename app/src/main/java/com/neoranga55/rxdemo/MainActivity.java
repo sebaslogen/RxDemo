@@ -90,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        // 1.2- Solve the same problem using a RxRelay library
     }
 
     @Override
