@@ -72,11 +72,7 @@ public class MainActivity extends AppCompatActivity {
         // - onComplete() and onError() events
         final PublishSubject searchSubject = PublishSubject.create();
         Subscription subs1 = searchSubject
-                .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
-                .observeOn(Schedulers.io())
-                // Network call should be on IO thread (fake delay() already operates in Computation thread)
-                .delay(1, TimeUnit.SECONDS) // Simulate network call
-                .observeOn(AndroidSchedulers.mainThread()) // Response needs to be on UI thread
+                .compose(applyWaitAndDelayTransformation())
                 .subscribe(new Action1<String>() {
                     @Override
                     public void call(String res) {
@@ -104,11 +100,7 @@ public class MainActivity extends AppCompatActivity {
         final PublishRelay searchPublishRelay = PublishRelay.create();
         // Note: add .toSerialized() to any type of Relay object to ensure emitting(.call()) is thread safe
         Subscription subs2 = searchPublishRelay
-                .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
-                .observeOn(Schedulers.io())
-                // Network call should be on IO thread (fake delay() already operates in Computation thread)
-                .delay(1, TimeUnit.SECONDS) // Simulate network call
-                .observeOn(AndroidSchedulers.mainThread()) // Response needs to be on UI thread
+                .compose(applyWaitAndDelayTransformation())
                 .subscribe(new Action1<String>() {
                     @Override
                     public void call(String res) {
@@ -134,14 +126,22 @@ public class MainActivity extends AppCompatActivity {
         // 1.3- Solve the same problem using a RxBindings library especially designed for Android UI
         Observable<CharSequence> searchRxBinding = RxTextView.textChanges(inputField);
         Subscription subs3 = searchRxBinding
-                .debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
+                .filter(charSequence -> charSequence.length() > 0)
+                .startWith("Processed text RxBindings2")
                 .map(CharSequence::toString) // RxBinding returns the original CharSequence
-                .observeOn(Schedulers.io())
-                // Network call should be on IO thread (fake delay() already operates in Computation thread)
-                .delay(1, TimeUnit.SECONDS) // Simulate network call
-                .observeOn(AndroidSchedulers.mainThread()) // Response needs to be on UI thread
+                .compose(applyWaitAndDelayTransformation())
                 .subscribe(resultFieldForRxBindings::setText);
         subscriptions.add(subs3); // We always have to unsubscribe
+    }
+
+    private <T> Observable.Transformer<T, T> applyWaitAndDelayTransformation() {
+        return tObservable -> {
+            return tObservable.debounce(1, TimeUnit.SECONDS) // Wait 1 second and emit the last item on that window of time
+                    .observeOn(Schedulers.io())
+                    // Network call should be on IO thread (fake delay() already operates in Computation thread)
+                    .delay(1, TimeUnit.SECONDS) // Simulate network call
+                    .observeOn(AndroidSchedulers.mainThread()); // Response needs to be on UI thread
+        };
     }
 
     @Override
