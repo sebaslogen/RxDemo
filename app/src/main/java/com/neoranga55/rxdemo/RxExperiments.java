@@ -1,5 +1,10 @@
 package com.neoranga55.rxdemo;
 
+import android.util.Log;
+
+import com.jakewharton.rx.transformer.ReplayingShare;
+import com.jakewharton.rxrelay.BehaviorRelay;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +15,7 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.exceptions.Exceptions;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
 
 /**
  * Created by neoranga on 23/03/2016.
@@ -300,5 +306,50 @@ public class RxExperiments {
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(System.out::println);
+    }
+
+    /**
+     * The idea of this construct is to share a value produced from an external source among multiple subscribers
+     * and the registration/un-registration from producer source can only happen once for all clients.
+     * Therefore:
+     * Only the first subscriber needs to execute the source doOnSubscribe method to register/create source
+     * Only the last subscriber to unsubscribe needs to execute the source doOnUnsubscribe method to un-register/delete source
+     * These two points above are provided by the ReplayingShare composition
+     *
+     * The output of this example is:
+     * I/RxExperiments: doOnSubscribe
+     * I/RxExperiments: subscribe1->Next with 0
+     * I/RxExperiments: subscribe1->Next with 1
+     * I/RxExperiments: subscribe2->Next with 1
+     * I/RxExperiments: subscribe1->Next with 2
+     * I/RxExperiments: subscribe2->Next with 2
+     * I/RxExperiments: doOnUnsubscribe
+     *
+     * Use case: on first subscription start listening for Bluetooth connection state changes from the OS,
+     * share BT state update events among 1 or more subscribers, new subscribers get last event emitted
+     * and only when the last subscriber unsubscribes we should stop listening for BT connection state changes from the OS
+     * @param mSubscriptions Safe unsubscription in case of early destruction
+     */
+    public static void relaySharedWithSingleSubscribeAndUnSubscribe(CompositeSubscription mSubscriptions) {
+        BehaviorRelay<Integer> br = BehaviorRelay.create(0);
+        Observable<Integer> relayObservable = br
+                .doOnSubscribe(() -> {
+                    Log.i("RxExperiments", "doOnSubscribe");
+                }).doOnUnsubscribe(() -> {
+                    Log.i("RxExperiments", "doOnUnsubscribe");
+                })
+                .compose(ReplayingShare.instance());
+        Subscription subscription1 = relayObservable.subscribe(i -> {
+            Log.i("RxExperiments", "subscribe1->Next with " + i);
+        });
+        mSubscriptions.add(subscription1);
+        br.call(1);
+        Subscription subscription2 = relayObservable.subscribe(i -> {
+            Log.i("RxExperiments", "subscribe2->Next with " + i);
+        });
+        mSubscriptions.add(subscription2);
+        br.call(2);
+        subscription2.unsubscribe();
+        subscription1.unsubscribe();
     }
 }

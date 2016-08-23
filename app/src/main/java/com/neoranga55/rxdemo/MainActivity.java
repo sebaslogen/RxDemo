@@ -4,12 +4,19 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.jakewharton.rx.transformer.ReplayingShare;
 import com.jakewharton.rxbinding.widget.RxTextView;
+import com.jakewharton.rxrelay.BehaviorRelay;
 import com.jakewharton.rxrelay.PublishRelay;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
@@ -49,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
         mSubscriptions.add(RxExperiments.deferExceptionDemo());
 
         mSubscriptions.add(RxExperiments.deferExceptionDemoWithErrorHandling());
+
+        RxExperiments.relaySharedWithSingleSubscribeAndUnSubscribe(mSubscriptions);
 
         rxSubjectPipes(mSubscriptions);
 
