@@ -309,43 +309,138 @@ public class RxExperiments {
     }
 
     /**
-     * The idea of this construct is to share a value produced from an external source among multiple subscribers
+     * The idea of this construct is to share a value produced from an external source among multiple observers
      * and the registration/un-registration from producer source can only happen once for all clients.
-     * Therefore:
-     * Only the first subscriber needs to execute the source doOnSubscribe method to register/create source
-     * Only the last subscriber to unsubscribe needs to execute the source doOnUnsubscribe method to un-register/delete source
-     * These two points above are provided by the ReplayingShare composition
+     * Using BehaviorRelay all observers will get the same events but on doOnSubscribe and doOnUnsubscribe
+     * will be triggered every time a new observer subscribes/unsubscribes making those method a problematic
+     * place to register and unregister to the external source
      *
      * The output of this example is:
-     * I/RxExperiments: doOnSubscribe
-     * I/RxExperiments: subscribe1->Next with 0
-     * I/RxExperiments: subscribe1->Next with 1
-     * I/RxExperiments: subscribe2->Next with 1
-     * I/RxExperiments: subscribe1->Next with 2
-     * I/RxExperiments: subscribe2->Next with 2
-     * I/RxExperiments: doOnUnsubscribe
+     * I/RxExperiments: ReplaySharedProblematic->doOnSubscribe
+     * I/RxExperiments: ReplaySharedProblematic->observer-1->onNext with 0
+     * I/RxExperiments: ReplaySharedProblematic->observer-1->onNext with 1
+     * I/RxExperiments: ReplaySharedProblematic->doOnSubscribe              <- PROBLEM: unwanted call
+     * I/RxExperiments: ReplaySharedProblematic->observer-2->onNext with 1
+     * I/RxExperiments: ReplaySharedProblematic->observer-1->onNext with 2
+     * I/RxExperiments: ReplaySharedProblematic->observer-2->onNext with 2
+     * I/RxExperiments: ReplaySharedProblematic->doOnUnsubscribe            <- PROBLEM: unwanted call
+     * I/RxExperiments: ReplaySharedProblematic->doOnUnsubscribe
      *
-     * Use case: on first subscription start listening for Bluetooth connection state changes from the OS,
-     * share BT state update events among 1 or more subscribers, new subscribers get last event emitted
-     * and only when the last subscriber unsubscribes we should stop listening for BT connection state changes from the OS
+     * Note: When second observer subscribes the previous value ('1') is immediately emitted because it was cached
+     *
+     * Use case: on first subscription starts listening for Bluetooth connection state changes from the OS,
+     * share BT state update events among 1 or more observers,
+     * only when the last observer unsubscribes we should stop listening for BT connection state changes from the OS
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
-    public static void relaySharedWithSingleSubscribeAndUnSubscribe(CompositeSubscription mSubscriptions) {
+    public static void relaySharedWithMultipleProblematicOnSubscribeAndOnUnSubscribeEvents(CompositeSubscription mSubscriptions) {
         BehaviorRelay<Integer> br = BehaviorRelay.create(0);
         Observable<Integer> relayObservable = br
                 .doOnSubscribe(() -> {
-                    Log.i("RxExperiments", "doOnSubscribe");
+                    Log.i("RxExperiments", "ReplaySharedProblematic->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
-                    Log.i("RxExperiments", "doOnUnsubscribe");
-                })
-                .compose(ReplayingShare.instance());
+                    Log.i("RxExperiments", "ReplaySharedProblematic->doOnUnsubscribe");
+                });
         Subscription subscription1 = relayObservable.subscribe(i -> {
-            Log.i("RxExperiments", "subscribe1->Next with " + i);
+            Log.i("RxExperiments", "ReplaySharedProblematic->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
         br.call(1);
         Subscription subscription2 = relayObservable.subscribe(i -> {
-            Log.i("RxExperiments", "subscribe2->Next with " + i);
+            Log.i("RxExperiments", "ReplaySharedProblematic->observer-2->onNext with " + i);
+        });
+        mSubscriptions.add(subscription2);
+        br.call(2);
+        subscription2.unsubscribe();
+        subscription1.unsubscribe();
+    }
+
+    /**
+     * The idea of this construct is to share a value produced from an external source among multiple observers
+     * and the registration/un-registration from producer source can only happen once for all clients.
+     * Therefore:
+     * Only the first observer needs to execute the source doOnSubscribe method to register/create source
+     * Only the last observer to unsubscribe needs to execute the source doOnUnsubscribe method to un-register/delete source
+     * These two points above are provided by the share() operator
+     *
+     * The output of this example is:
+     * I/RxExperiments: share->doOnSubscribe
+     * I/RxExperiments: share->observer-1->onNext with 0
+     * I/RxExperiments: share->observer-1->onNext with 1
+     * I/RxExperiments: share->observer-1->onNext with 2
+     * I/RxExperiments: share->observer-2->onNext with 2
+     * I/RxExperiments: share->doOnUnsubscribe
+     *
+     * Warning: When second observer subscribes no previous value ('1') is emitted, only new values ('2')
+     *
+     * Use case: on first subscription starts listening for Bluetooth connection state changes from the OS,
+     * share BT state update events among 1 or more observers,
+     * only when the last observer unsubscribes we should stop listening for BT connection state changes from the OS
+     * @param mSubscriptions Safe unsubscription in case of early destruction
+     */
+    public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribe(CompositeSubscription mSubscriptions) {
+        BehaviorRelay<Integer> br = BehaviorRelay.create(0);
+        Observable<Integer> relayObservable = br
+                .doOnSubscribe(() -> {
+                    Log.i("RxExperiments", "share->doOnSubscribe");
+                }).doOnUnsubscribe(() -> {
+                    Log.i("RxExperiments", "share->doOnUnsubscribe");
+                })
+                .share();
+        Subscription subscription1 = relayObservable.subscribe(i -> {
+            Log.i("RxExperiments", "share->observer-1->onNext with " + i);
+        });
+        mSubscriptions.add(subscription1);
+        br.call(1);
+        Subscription subscription2 = relayObservable.subscribe(i -> {
+            Log.i("RxExperiments", "share->observer-2->onNext with " + i);
+        });
+        mSubscriptions.add(subscription2);
+        br.call(2);
+        subscription2.unsubscribe();
+        subscription1.unsubscribe();
+    }
+
+    /**
+     * The idea of this construct is to share a value produced from an external source among multiple observers
+     * and the registration/un-registration from producer source can only happen once for all clients.
+     * Therefore:
+     * Only the first observer needs to execute the source doOnSubscribe method to register/create source
+     * Only the last observer to unsubscribe needs to execute the source doOnUnsubscribe method to un-register/delete source
+     * These two points above are provided by the ReplayingShare composition
+     *
+     * The output of this example is:
+     * I/RxExperiments: doOnSubscribe
+     * I/RxExperiments: subscribe1->onNext with 0
+     * I/RxExperiments: subscribe1->onNext with 1
+     * I/RxExperiments: subscribe2->onNext with 1
+     * I/RxExperiments: subscribe1->onNext with 2
+     * I/RxExperiments: subscribe2->onNext with 2
+     * I/RxExperiments: doOnUnsubscribe
+     *
+     * Note: When second observer subscribes the previous value ('1') is immediately emitted because it was cached
+     *
+     * Use case: on first subscription starts listening for Bluetooth connection state changes from the OS,
+     * share BT state update events among 1 or more observers, new observers get last event emitted
+     * and only when the last observer unsubscribes we should stop listening for BT connection state changes from the OS
+     * @param mSubscriptions Safe unsubscription in case of early destruction
+     */
+    public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribeUsingRxReplayingShare(CompositeSubscription mSubscriptions) {
+        BehaviorRelay<Integer> br = BehaviorRelay.create(0);
+        Observable<Integer> relayObservable = br
+                .doOnSubscribe(() -> {
+                    Log.i("RxExperiments", "RxReplayingShare->doOnSubscribe");
+                }).doOnUnsubscribe(() -> {
+                    Log.i("RxExperiments", "RxReplayingShare->doOnUnsubscribe");
+                })
+                .compose(ReplayingShare.instance());
+        Subscription subscription1 = relayObservable.subscribe(i -> {
+            Log.i("RxExperiments", "RxReplayingShare->observer-1->onNext with " + i);
+        });
+        mSubscriptions.add(subscription1);
+        br.call(1);
+        Subscription subscription2 = relayObservable.subscribe(i -> {
+            Log.i("RxExperiments", "RxReplayingShare->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
         br.call(2);
