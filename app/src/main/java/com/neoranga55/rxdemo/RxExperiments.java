@@ -316,15 +316,19 @@ public class RxExperiments {
      * place to register and unregister to the external source
      *
      * The output of this example is:
-     * I/RxExperiments: ReplaySharedProblematic->doOnSubscribe
-     * I/RxExperiments: ReplaySharedProblematic->observer-1->onNext with 0
-     * I/RxExperiments: ReplaySharedProblematic->observer-1->onNext with 1
-     * I/RxExperiments: ReplaySharedProblematic->doOnSubscribe              <- PROBLEM: unwanted call
-     * I/RxExperiments: ReplaySharedProblematic->observer-2->onNext with 1
-     * I/RxExperiments: ReplaySharedProblematic->observer-1->onNext with 2
-     * I/RxExperiments: ReplaySharedProblematic->observer-2->onNext with 2
-     * I/RxExperiments: ReplaySharedProblematic->doOnUnsubscribe            <- PROBLEM: unwanted call
-     * I/RxExperiments: ReplaySharedProblematic->doOnUnsubscribe
+     * ReplaySharedProblematic -> observer-1 subscribes
+     * ReplaySharedProblematic -> doOnSubscribe
+     * ReplaySharedProblematic -> observer-1 -> onNext with 0
+     * ReplaySharedProblematic -> observer-1 -> onNext with 1
+     * ReplaySharedProblematic -> observer-2 subscribes
+     * ReplaySharedProblematic -> doOnSubscribe              <- PROBLEM: unwanted call
+     * ReplaySharedProblematic -> observer-2 -> onNext with 1
+     * ReplaySharedProblematic -> observer-1 -> onNext with 2
+     * ReplaySharedProblematic -> observer-2 -> onNext with 2
+     * ReplaySharedProblematic -> observer-2 unsubscribes
+     * ReplaySharedProblematic -> doOnUnsubscribe            <- PROBLEM: unwanted call
+     * ReplaySharedProblematic -> observer-2 unsubscribes
+     * ReplaySharedProblematic -> doOnUnsubscribe
      *
      * Note: When second observer subscribes the previous value ('1') is immediately emitted because it was cached
      *
@@ -341,17 +345,24 @@ public class RxExperiments {
                 }).doOnUnsubscribe(() -> {
                     Log.i("RxExperiments", "ReplaySharedProblematic->doOnUnsubscribe");
                 });
+
+        Log.i("RxExperiments", "ReplaySharedProblematic->observer-1 subscribes");
         Subscription subscription1 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "ReplaySharedProblematic->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
         br.call(1);
+
+        Log.i("RxExperiments", "ReplaySharedProblematic->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "ReplaySharedProblematic->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
         br.call(2);
+
+        Log.i("RxExperiments", "ReplaySharedProblematic->observer-2 unsubscribes");
         subscription2.unsubscribe();
+        Log.i("RxExperiments", "ReplaySharedProblematic->observer-2 unsubscribes");
         subscription1.unsubscribe();
     }
 
@@ -364,12 +375,17 @@ public class RxExperiments {
      * These two points above are provided by the share() operator
      *
      * The output of this example is:
-     * I/RxExperiments: share->doOnSubscribe
-     * I/RxExperiments: share->observer-1->onNext with 0
-     * I/RxExperiments: share->observer-1->onNext with 1
-     * I/RxExperiments: share->observer-1->onNext with 2
-     * I/RxExperiments: share->observer-2->onNext with 2
-     * I/RxExperiments: share->doOnUnsubscribe
+     * share -> observer-1 subscribes
+     * share -> doOnSubscribe
+     * share -> observer-1 -> onNext with 0
+     * share -> observer-1 -> onNext with 1
+     * share -> observer-2 subscribes
+*                                                      <- PROBLEM: missing call "observer-2 -> onNext with 1"
+     * share -> observer-1 -> onNext with 2
+     * share -> observer-2 -> onNext with 2
+     * share -> observer-1 unsubscribes
+     * share -> observer-2 unsubscribes
+     * share -> doOnUnsubscribe
      *
      * Warning: When second observer subscribes no previous value ('1') is emitted, only new values ('2')
      *
@@ -387,17 +403,24 @@ public class RxExperiments {
                     Log.i("RxExperiments", "share->doOnUnsubscribe");
                 })
                 .share();
+
+        Log.i("RxExperiments", "share->observer-1 subscribes");
         Subscription subscription1 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "share->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
         br.call(1);
+
+        Log.i("RxExperiments", "share->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "share->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
         br.call(2);
+
+        Log.i("RxExperiments", "share->observer-1 unsubscribes");
         subscription2.unsubscribe();
+        Log.i("RxExperiments", "share->observer-2 unsubscribes");
         subscription1.unsubscribe();
     }
 
@@ -410,13 +433,17 @@ public class RxExperiments {
      * These two points above are provided by the ReplayingShare composition
      *
      * The output of this example is:
-     * I/RxExperiments: doOnSubscribe
-     * I/RxExperiments: subscribe1->onNext with 0
-     * I/RxExperiments: subscribe1->onNext with 1
-     * I/RxExperiments: subscribe2->onNext with 1
-     * I/RxExperiments: subscribe1->onNext with 2
-     * I/RxExperiments: subscribe2->onNext with 2
-     * I/RxExperiments: doOnUnsubscribe
+     * RxReplayingShare -> observer-1 subscribes
+     * RxReplayingShare -> doOnSubscribe
+     * RxReplayingShare -> observer-1 -> onNext with 0
+     * RxReplayingShare -> observer-1 -> onNext with 1
+     * RxReplayingShare -> observer-2 subscribes
+     * RxReplayingShare -> observer-2 -> onNext with 1
+     * RxReplayingShare -> observer-1 -> onNext with 2
+     * RxReplayingShare -> observer-2 -> onNext with 2
+     * RxReplayingShare -> observer-1 unsubscribes
+     * RxReplayingShare -> observer-2 unsubscribes
+     * RxReplayingShare -> doOnUnsubscribe
      *
      * Note: When second observer subscribes the previous value ('1') is immediately emitted because it was cached
      *
@@ -429,22 +456,29 @@ public class RxExperiments {
         BehaviorRelay<Integer> br = BehaviorRelay.create(0);
         Observable<Integer> relayObservable = br
                 .doOnSubscribe(() -> {
-                    Log.i("RxExperiments", "RxReplayingShare->doOnSubscribe");
+                    Log.i("RxExperiments", "ReplayingShare->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
-                    Log.i("RxExperiments", "RxReplayingShare->doOnUnsubscribe");
+                    Log.i("RxExperiments", "ReplayingShare->doOnUnsubscribe");
                 })
                 .compose(ReplayingShare.instance());
+
+        Log.i("RxExperiments", "ReplayingShare->observer-1 subscribes");
         Subscription subscription1 = relayObservable.subscribe(i -> {
-            Log.i("RxExperiments", "RxReplayingShare->observer-1->onNext with " + i);
+            Log.i("RxExperiments", "ReplayingShare->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
         br.call(1);
+
+        Log.i("RxExperiments", "ReplayingShare->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
-            Log.i("RxExperiments", "RxReplayingShare->observer-2->onNext with " + i);
+            Log.i("RxExperiments", "ReplayingShare->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
         br.call(2);
+
+        Log.i("RxExperiments", "ReplayingShare->observer-1 unsubscribes");
         subscription2.unsubscribe();
+        Log.i("RxExperiments", "ReplayingShare->observer-2 unsubscribes");
         subscription1.unsubscribe();
     }
 }
