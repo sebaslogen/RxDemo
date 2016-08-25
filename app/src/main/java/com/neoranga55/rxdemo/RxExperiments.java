@@ -316,19 +316,19 @@ public class RxExperiments {
      * place to register and unregister to the external source
      *
      * The output of this example is:
-     * ReplaySharedProblematic -> observer-1 subscribes
-     * ReplaySharedProblematic -> doOnSubscribe
-     * ReplaySharedProblematic -> observer-1 -> onNext with 0
-     * ReplaySharedProblematic -> observer-1 -> onNext with 1
-     * ReplaySharedProblematic -> observer-2 subscribes
-     * ReplaySharedProblematic -> doOnSubscribe              <- PROBLEM: unwanted call
-     * ReplaySharedProblematic -> observer-2 -> onNext with 1
-     * ReplaySharedProblematic -> observer-1 -> onNext with 2
-     * ReplaySharedProblematic -> observer-2 -> onNext with 2
-     * ReplaySharedProblematic -> observer-2 unsubscribes
-     * ReplaySharedProblematic -> doOnUnsubscribe            <- PROBLEM: unwanted call
-     * ReplaySharedProblematic -> observer-2 unsubscribes
-     * ReplaySharedProblematic -> doOnUnsubscribe
+     * RelayBehaviorProblem -> observer-1 subscribes
+     * RelayBehaviorProblem -> doOnSubscribe
+     * RelayBehaviorProblem -> observer-1 -> onNext with 0
+     * RelayBehaviorProblem -> observer-1 -> onNext with 1
+     * RelayBehaviorProblem -> observer-2 subscribes
+     * RelayBehaviorProblem -> doOnSubscribe              <- PROBLEM: unwanted call
+     * RelayBehaviorProblem -> observer-2 -> onNext with 1
+     * RelayBehaviorProblem -> observer-1 -> onNext with 2
+     * RelayBehaviorProblem -> observer-2 -> onNext with 2
+     * RelayBehaviorProblem -> observer-2 unsubscribes
+     * RelayBehaviorProblem -> doOnUnsubscribe            <- PROBLEM: unwanted call
+     * RelayBehaviorProblem -> observer-2 unsubscribes
+     * RelayBehaviorProblem -> doOnUnsubscribe
      *
      * Note: When second observer subscribes the previous value ('1') is immediately emitted because it was cached
      *
@@ -341,28 +341,28 @@ public class RxExperiments {
         BehaviorRelay<Integer> br = BehaviorRelay.create(0);
         Observable<Integer> relayObservable = br
                 .doOnSubscribe(() -> {
-                    Log.i("RxExperiments", "ReplaySharedProblematic->doOnSubscribe");
+                    Log.i("RxExperiments", "RelayBehaviorProblem->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
-                    Log.i("RxExperiments", "ReplaySharedProblematic->doOnUnsubscribe");
+                    Log.i("RxExperiments", "RelayBehaviorProblem->doOnUnsubscribe");
                 });
 
-        Log.i("RxExperiments", "ReplaySharedProblematic->observer-1 subscribes");
+        Log.i("RxExperiments", "RelayBehaviorProblem->observer-1 subscribes");
         Subscription subscription1 = relayObservable.subscribe(i -> {
-            Log.i("RxExperiments", "ReplaySharedProblematic->observer-1->onNext with " + i);
+            Log.i("RxExperiments", "RelayBehaviorProblem->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
         br.call(1);
 
-        Log.i("RxExperiments", "ReplaySharedProblematic->observer-2 subscribes");
+        Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
-            Log.i("RxExperiments", "ReplaySharedProblematic->observer-2->onNext with " + i);
+            Log.i("RxExperiments", "RelayBehaviorProblem->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
         br.call(2);
 
-        Log.i("RxExperiments", "ReplaySharedProblematic->observer-2 unsubscribes");
+        Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 unsubscribes");
         subscription2.unsubscribe();
-        Log.i("RxExperiments", "ReplaySharedProblematic->observer-2 unsubscribes");
+        Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 unsubscribes");
         subscription1.unsubscribe();
     }
 
