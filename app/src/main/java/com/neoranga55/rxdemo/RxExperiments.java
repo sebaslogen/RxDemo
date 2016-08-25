@@ -338,8 +338,8 @@ public class RxExperiments {
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
     public static void relaySharedWithMultipleProblematicOnSubscribeAndOnUnSubscribeEvents(CompositeSubscription mSubscriptions) {
-        BehaviorRelay<Integer> br = BehaviorRelay.create(0);
-        Observable<Integer> relayObservable = br
+        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create(0);
+        Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
                     Log.i("RxExperiments", "RelayBehaviorProblem->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
@@ -351,14 +351,14 @@ public class RxExperiments {
             Log.i("RxExperiments", "RelayBehaviorProblem->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
-        br.call(1);
+        behaviorRelay.call(1);
 
         Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "RelayBehaviorProblem->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
-        br.call(2);
+        behaviorRelay.call(2);
 
         Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 unsubscribes");
         subscription2.unsubscribe();
@@ -395,8 +395,8 @@ public class RxExperiments {
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
     public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribe(CompositeSubscription mSubscriptions) {
-        BehaviorRelay<Integer> br = BehaviorRelay.create(0);
-        Observable<Integer> relayObservable = br
+        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create(0);
+        Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
                     Log.i("RxExperiments", "share->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
@@ -409,14 +409,14 @@ public class RxExperiments {
             Log.i("RxExperiments", "share->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
-        br.call(1);
+        behaviorRelay.call(1);
 
         Log.i("RxExperiments", "share->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "share->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
-        br.call(2);
+        behaviorRelay.call(2);
 
         Log.i("RxExperiments", "share->observer-1 unsubscribes");
         subscription2.unsubscribe();
@@ -453,8 +453,8 @@ public class RxExperiments {
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
     public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribeUsingRxReplayingShare(CompositeSubscription mSubscriptions) {
-        BehaviorRelay<Integer> br = BehaviorRelay.create(0);
-        Observable<Integer> relayObservable = br
+        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create(0);
+        Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
                     Log.i("RxExperiments", "ReplayingShare->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
@@ -467,14 +467,14 @@ public class RxExperiments {
             Log.i("RxExperiments", "ReplayingShare->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
-        br.call(1);
+        behaviorRelay.call(1);
 
         Log.i("RxExperiments", "ReplayingShare->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "ReplayingShare->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
-        br.call(2);
+        behaviorRelay.call(2);
 
         Log.i("RxExperiments", "ReplayingShare->observer-1 unsubscribes");
         subscription2.unsubscribe();
