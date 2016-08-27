@@ -1,6 +1,9 @@
 package com.neoranga55.rxdemo;
 
+import android.os.Handler;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
 import com.jakewharton.rx.transformer.ReplayingShare;
 import com.jakewharton.rxrelay.BehaviorRelay;
@@ -8,6 +11,7 @@ import com.jakewharton.rxrelay.BehaviorRelay;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
@@ -480,5 +484,29 @@ public class RxExperiments {
         subscription2.unsubscribe();
         Log.i("RxExperiments", "ReplayingShare->observer-2 unsubscribes");
         subscription1.unsubscribe();
+    }
+
+    public static void relaySharedWithEmitter(CompositeSubscription mSubscriptions, Button button) {
+        Observable<Object> fromAsyncObservable = Observable.fromAsync(emitter -> {
+            View.OnClickListener event = emitter::onNext;
+
+            Log.i("RxExperiments", "RelaySharedWithEmitter->onSubscribe");
+            button.setOnClickListener(event);
+
+            emitter.setCancellation(() ->
+                    button.setOnClickListener(null));
+
+        }, AsyncEmitter.BackpressureMode.BUFFER).compose(ReplayingShare.instance());
+
+        Subscription subscription1 = fromAsyncObservable.subscribe(i -> {
+            Log.i("RxExperiments", "RelaySharedWithEmitter->observer-1->onNext with " + i);
+        });
+        // Second subscription is delayed so I can press the button in the UI and check that observer 2 receives cached value on subscription
+        (new Handler()).postDelayed(() -> {
+            Subscription subscription2 = fromAsyncObservable.subscribe(i -> {
+                Log.i("RxExperiments", "RelaySharedWithEmitter->observer-2->onNext with " + i);
+            });
+        }, 20000);
+
     }
 }

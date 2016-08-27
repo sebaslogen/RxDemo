@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
         RxExperiments.relaySharedWithMultipleProblematicOnSubscribeAndOnUnSubscribeEvents(mSubscriptions);
         RxExperiments.relaySharedWithSingleOnSubscribeAndOnUnSubscribe(mSubscriptions);
         RxExperiments.relaySharedWithSingleOnSubscribeAndOnUnSubscribeUsingRxReplayingShare(mSubscriptions);
+        Button button = (Button) findViewById(R.id.button);
+        RxExperiments.relaySharedWithEmitter(mSubscriptions, button);
 
         rxSubjectPipes(mSubscriptions);
 
