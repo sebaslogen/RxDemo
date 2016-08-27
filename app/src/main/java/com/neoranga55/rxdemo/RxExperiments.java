@@ -7,6 +7,7 @@ import android.widget.Button;
 
 import com.jakewharton.rx.transformer.ReplayingShare;
 import com.jakewharton.rxrelay.BehaviorRelay;
+import com.jakewharton.rxrelay.PublishRelay;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -439,7 +440,6 @@ public class RxExperiments {
      * The output of this example is:
      * RxReplayingShare -> observer-1 subscribes
      * RxReplayingShare -> doOnSubscribe
-     * RxReplayingShare -> observer-1 -> onNext with 0
      * RxReplayingShare -> observer-1 -> onNext with 1
      * RxReplayingShare -> observer-2 subscribes
      * RxReplayingShare -> observer-2 -> onNext with 1
@@ -457,8 +457,8 @@ public class RxExperiments {
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
     public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribeUsingRxReplayingShare(CompositeSubscription mSubscriptions) {
-        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create(0);
-        Observable<Integer> relayObservable = behaviorRelay
+        PublishRelay<Integer> publishRelay = PublishRelay.create();
+        Observable<Integer> relayObservable = publishRelay
                 .doOnSubscribe(() -> {
                     Log.i("RxExperiments", "ReplayingShare->doOnSubscribe");
                 }).doOnUnsubscribe(() -> {
@@ -471,14 +471,14 @@ public class RxExperiments {
             Log.i("RxExperiments", "ReplayingShare->observer-1->onNext with " + i);
         });
         mSubscriptions.add(subscription1);
-        behaviorRelay.call(1);
+        publishRelay.call(1);
 
         Log.i("RxExperiments", "ReplayingShare->observer-2 subscribes");
         Subscription subscription2 = relayObservable.subscribe(i -> {
             Log.i("RxExperiments", "ReplayingShare->observer-2->onNext with " + i);
         });
         mSubscriptions.add(subscription2);
-        behaviorRelay.call(2);
+        publishRelay.call(2);
 
         Log.i("RxExperiments", "ReplayingShare->observer-1 unsubscribes");
         subscription2.unsubscribe();
