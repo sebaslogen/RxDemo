@@ -323,7 +323,6 @@ public class RxExperiments {
      * The output of this example is:
      * RelayBehaviorProblem -> observer-1 subscribes
      * RelayBehaviorProblem -> doOnSubscribe
-     * RelayBehaviorProblem -> observer-1 -> onNext with 0
      * RelayBehaviorProblem -> observer-1 -> onNext with 1
      * RelayBehaviorProblem -> observer-2 subscribes
      * RelayBehaviorProblem -> doOnSubscribe              <- PROBLEM: unwanted call
@@ -343,7 +342,7 @@ public class RxExperiments {
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
     public static void relaySharedWithMultipleProblematicOnSubscribeAndOnUnSubscribeEvents(CompositeSubscription mSubscriptions) {
-        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create(0);
+        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create();
         Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
                     Log.i("RxExperiments", "RelayBehaviorProblem->doOnSubscribe");
@@ -382,7 +381,6 @@ public class RxExperiments {
      * The output of this example is:
      * share -> observer-1 subscribes
      * share -> doOnSubscribe
-     * share -> observer-1 -> onNext with 0
      * share -> observer-1 -> onNext with 1
      * share -> observer-2 subscribes
 *                                                      <- PROBLEM: missing call "observer-2 -> onNext with 1"
@@ -400,7 +398,7 @@ public class RxExperiments {
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
     public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribe(CompositeSubscription mSubscriptions) {
-        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create(0);
+        BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create();
         Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
                     Log.i("RxExperiments", "share->doOnSubscribe");
