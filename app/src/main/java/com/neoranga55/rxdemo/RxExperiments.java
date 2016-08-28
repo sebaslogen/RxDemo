@@ -330,7 +330,7 @@ public class RxExperiments {
      * RelayBehaviorProblem -> observer-2 -> onNext with 1
      * RelayBehaviorProblem -> observer-1 -> onNext with 2
      * RelayBehaviorProblem -> observer-2 -> onNext with 2
-     * RelayBehaviorProblem -> observer-2 unsubscribes
+     * RelayBehaviorProblem -> observer-1 unsubscribes
      * RelayBehaviorProblem -> doOnUnsubscribe            <- PROBLEM: unwanted call
      * RelayBehaviorProblem -> observer-2 unsubscribes
      * RelayBehaviorProblem -> doOnUnsubscribe
@@ -365,10 +365,10 @@ public class RxExperiments {
         mSubscriptions.add(subscription2);
         behaviorRelay.call(2);
 
+        Log.i("RxExperiments", "RelayBehaviorProblem->observer-1 unsubscribes");
+        subscription1.unsubscribe();
         Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 unsubscribes");
         subscription2.unsubscribe();
-        Log.i("RxExperiments", "RelayBehaviorProblem->observer-2 unsubscribes");
-        subscription1.unsubscribe();
     }
 
     /**
@@ -424,9 +424,9 @@ public class RxExperiments {
         behaviorRelay.call(2);
 
         Log.i("RxExperiments", "share->observer-1 unsubscribes");
-        subscription2.unsubscribe();
-        Log.i("RxExperiments", "share->observer-2 unsubscribes");
         subscription1.unsubscribe();
+        Log.i("RxExperiments", "share->observer-2 unsubscribes");
+        subscription2.unsubscribe();
     }
 
     /**
@@ -481,9 +481,9 @@ public class RxExperiments {
         publishRelay.call(2);
 
         Log.i("RxExperiments", "ReplayingShare->observer-1 unsubscribes");
-        subscription2.unsubscribe();
-        Log.i("RxExperiments", "ReplayingShare->observer-2 unsubscribes");
         subscription1.unsubscribe();
+        Log.i("RxExperiments", "ReplayingShare->observer-2 unsubscribes");
+        subscription2.unsubscribe();
     }
 
     public static void relaySharedWithEmitter(CompositeSubscription mSubscriptions, Button button) {
