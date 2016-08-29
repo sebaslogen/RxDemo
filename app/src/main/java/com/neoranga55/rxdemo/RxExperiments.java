@@ -484,27 +484,31 @@ public class RxExperiments {
         subscription2.unsubscribe();
     }
 
-    public static void relaySharedWithEmitter(CompositeSubscription mSubscriptions, Button button) {
+    public static void relaySharedWithEmitter(final CompositeSubscription mSubscriptions, final Button button) {
         Observable<Object> fromAsyncObservable = Observable.fromAsync(emitter -> {
             View.OnClickListener event = emitter::onNext;
 
             Log.i("RxExperiments", "RelaySharedWithEmitter->onSubscribe");
             button.setOnClickListener(event);
 
-            emitter.setCancellation(() ->
-                    button.setOnClickListener(null));
+            emitter.setCancellation(() -> {
+                Log.i("RxExperiments", "RelaySharedWithEmitter->Cancelling");
+                button.setOnClickListener(null);
+            });
 
         }, AsyncEmitter.BackpressureMode.BUFFER).compose(ReplayingShare.instance());
 
         Subscription subscription1 = fromAsyncObservable.subscribe(i -> {
             Log.i("RxExperiments", "RelaySharedWithEmitter->observer-1->onNext with " + i);
         });
+        mSubscriptions.add(subscription1);
+
         // Second subscription is delayed so I can press the button in the UI and check that observer 2 receives cached value on subscription
         (new Handler()).postDelayed(() -> {
             Subscription subscription2 = fromAsyncObservable.subscribe(i -> {
                 Log.i("RxExperiments", "RelaySharedWithEmitter->observer-2->onNext with " + i);
             });
+            mSubscriptions.add(subscription2);
         }, 20000);
-
     }
 }
