@@ -25,9 +25,9 @@ import rx.subscriptions.CompositeSubscription;
 /**
  * Created by neoranga on 23/03/2016.
  */
-public class RxExperiments {
+class RxExperiments {
 
-    public static String runRxDemos() {
+    static String runRxDemos() {
         // 1- Basic Rx 'Hello world'
         Observable<String> myObservable = Observable.create(
                 new Observable.OnSubscribe<String>() {
@@ -261,7 +261,7 @@ public class RxExperiments {
      * Defer execution of a method and forward errors to subscriber
      * @return subscription of deferred execution
      */
-    public static Subscription deferExceptionDemo() {
+    static Subscription deferExceptionDemo() {
         return Observable.defer(() -> Observable.just(RxExperiments.throwException()))
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -276,7 +276,7 @@ public class RxExperiments {
      * Defer execution of a method and example of how to handle possible errors
      * @return subscription of deferred execution
      */
-    public static Subscription deferDemo() {
+    static Subscription deferDemo() {
         return Observable.defer(() -> {
             try {
                 return Observable.just("deferDemo completed successfully");
@@ -296,7 +296,7 @@ public class RxExperiments {
                 .subscribe(System.out::println);
     }
 
-    public static String throwException() {
+    private static String throwException() {
         throw new ArrayIndexOutOfBoundsException();
     }
 
@@ -304,7 +304,7 @@ public class RxExperiments {
      * Defer execution of a method and handle error inside Observable
      * @return subscription of deferred execution
      */
-    public static Subscription deferExceptionDemoWithErrorHandling() {
+    static Subscription deferExceptionDemoWithErrorHandling() {
         return Observable.defer(() -> Observable.just(RxExperiments.throwException()))
                 .onErrorReturn( // The events above in the stream will still stop emitting items because they saw the onError event
                         error -> "Exception processed by Observable and this value is returned instead")
@@ -341,7 +341,7 @@ public class RxExperiments {
      * only when the last observer unsubscribes we should stop listening for BT connection state changes from the OS
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
-    public static void relaySharedWithMultipleProblematicOnSubscribeAndOnUnSubscribeEvents(CompositeSubscription mSubscriptions) {
+    static void relaySharedWithMultipleProblematicOnSubscribeAndOnUnSubscribeEvents(CompositeSubscription mSubscriptions) {
         BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create();
         Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
@@ -397,7 +397,7 @@ public class RxExperiments {
      * only when the last observer unsubscribes we should stop listening for BT connection state changes from the OS
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
-    public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribe(CompositeSubscription mSubscriptions) {
+    static void relaySharedWithSingleOnSubscribeAndOnUnSubscribe(CompositeSubscription mSubscriptions) {
         BehaviorRelay<Integer> behaviorRelay = BehaviorRelay.create();
         Observable<Integer> relayObservable = behaviorRelay
                 .doOnSubscribe(() -> {
@@ -454,7 +454,7 @@ public class RxExperiments {
      * and only when the last observer unsubscribes we should stop listening for BT connection state changes from the OS
      * @param mSubscriptions Safe unsubscription in case of early destruction
      */
-    public static void relaySharedWithSingleOnSubscribeAndOnUnSubscribeUsingRxReplayingShare(CompositeSubscription mSubscriptions) {
+    static void relaySharedWithSingleOnSubscribeAndOnUnSubscribeUsingRxReplayingShare(CompositeSubscription mSubscriptions) {
         PublishRelay<Integer> publishRelay = PublishRelay.create();
         Observable<Integer> relayObservable = publishRelay
                 .doOnSubscribe(() -> {
@@ -484,7 +484,7 @@ public class RxExperiments {
         subscription2.unsubscribe();
     }
 
-    public static void relaySharedWithEmitter(final CompositeSubscription mSubscriptions, final Button button) {
+    static void relaySharedWithEmitter(final CompositeSubscription mSubscriptions, final Button button) {
         Observable<Object> fromAsyncObservable = Observable.fromAsync(emitter -> {
             View.OnClickListener event = emitter::onNext;
 
