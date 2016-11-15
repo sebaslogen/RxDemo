@@ -22,6 +22,10 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
+import static com.neoranga55.rxdemo.FillerMethods.getFastDataFromNetwork;
+import static com.neoranga55.rxdemo.FillerMethods.getSlowDataFromDB;
+import static com.neoranga55.rxdemo.FillerMethods.getSlowDataFromNetwork;
+
 /**
  * Created by neoranga on 23/03/2016.
  */
@@ -152,8 +156,38 @@ class RxExperiments {
         // only when there is an error emitted and based on a policy
         rxRetry();
 
+        // 12- Simultaneously request data from DB and network,
+        // as soon as network is available forget about DB.
+        // Follow example from Jake Wharton https://twitter.com/JakeWharton/status/786363146990649345
+        getDataDbAndNetwork();
 
         return "runRxDemos completed successfully";
+    }
+
+    private static void getDataDbAndNetwork() {
+        System.out.println("Subscribing to fast network data in getDataDbAndNetwork()");
+        Observable<String> publishObs = getFastDataFromNetwork().publish(network ->
+                Observable.merge(network, getSlowDataFromDB().takeUntil(network))).publish();
+        publishObs.subscribe(s -> {
+            System.out.println("Subscriber receiving emitted item: " + s);
+        });
+        try {
+            Thread.sleep(150);
+        } catch (InterruptedException ignore) {
+        }
+        publishObs.subscribe(s -> {
+            System.out.println("Subscriber2 receiving emitted item: " + s);
+        });
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignore) {
+        }
+        System.out.println("Subscribing to slow network data in getDataDbAndNetwork()");
+        getSlowDataFromNetwork().publish(network ->
+                Observable.merge(network, getSlowDataFromDB().takeUntil(network)))
+        .subscribe(s -> {
+            System.out.println("Subscriber receiving emitted item: " + s);
+        });
     }
 
     /**

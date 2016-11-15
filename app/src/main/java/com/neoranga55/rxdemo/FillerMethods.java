@@ -1,7 +1,9 @@
 package com.neoranga55.rxdemo;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -50,5 +52,19 @@ public class FillerMethods {
                     }
                 }
         );
+    }
+
+    public static Observable<String> getSlowDataFromDB() {
+        return Observable.interval(200, TimeUnit.MILLISECONDS).map(s -> "Slow DB data");
+    }
+
+    public static Observable<String> getSlowDataFromNetwork() {
+        return Observable.interval(300, TimeUnit.MILLISECONDS)
+                .map(s -> "Slow network data").first();
+    }
+
+    public static Observable<String> getFastDataFromNetwork() {
+        return Observable.interval(100, TimeUnit.MILLISECONDS)
+                .map(s -> "Super fast network data" + (new Date()).getTime()).take(3);
     }
 }
