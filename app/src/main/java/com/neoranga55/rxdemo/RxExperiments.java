@@ -10,6 +10,7 @@ import com.jakewharton.rxrelay.BehaviorRelay;
 import com.jakewharton.rxrelay.PublishRelay;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 import rx.AsyncEmitter;
@@ -19,6 +20,8 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.exceptions.Exceptions;
 import rx.functions.Action1;
+import rx.functions.Func1;
+import rx.observables.ConnectableObservable;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
@@ -44,6 +47,7 @@ class RxExperiments {
                     }
                 }
         );
+
         Subscriber<String> mySubscriber = new Subscriber<String>() {
             @Override
             public void onNext(String s) { System.out.println(s); }
@@ -161,7 +165,27 @@ class RxExperiments {
         // Follow example from Jake Wharton https://twitter.com/JakeWharton/status/786363146990649345
         getDataDbAndNetwork();
 
+        // 13- Share an observable with publish() externally and internally of an observer
+        sharingObservables();
+
         return "runRxDemos completed successfully";
+    }
+
+    private static void sharingObservables() {
+        // 1- Basic Rx 'Hello world'
+        Observable<String> myObservable = Observable.just("Hello, world! " + (new Date()).getTime());
+        ConnectableObservable<String> basicPublish = myObservable.publish();
+        Observable<String> publishInsideObservable = myObservable.publish(new Func1<Observable<String>, Observable<String>>() {
+            @Override
+            public Observable<String> call(Observable<String> stringObservable) {
+                return Observable.merge(stringObservable, stringObservable); // Emit twice the same item
+            }
+        });
+        basicPublish.subscribe(s -> System.out.println("basicPublish - s1:" + s));
+        basicPublish.subscribe(s -> System.out.println("basicPublish - s2:" + s));
+        basicPublish.connect();
+        publishInsideObservable.subscribe(s -> System.out.println("publishInsideObservable - s1:" + s));
+        publishInsideObservable.subscribe(s -> System.out.println("publishInsideObservable - s2:" + s));
     }
 
     private static void getDataDbAndNetwork() {
